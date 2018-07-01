@@ -1,43 +1,62 @@
 const update = (target, command) => {
-  const commandInfo = findMethod(command);  
+  const { keys, method, updateValue } = findMethod(command);  
   const targetKey = Object.keys(command)[0];
   const keysOfTarget = Object.keys(target);
 
   let newTarget = null;
 
-  if(commandInfo.method === '$set') {
+  if(method === '$set') {
     newTarget = {};
-    if(commandInfo.keys.length !== 0) {
+    if(keys.length !== 0) {
       // for(let i = 0;i < keysOfTarget.length;i++) {
       //   newTarget[keysOfTarget[i]] = target[keysOfTarget[i]];
       // }
       newTarget = copyObject(target, targetKey);
       
-      //console.log(commandInfo);
-      setValue(newTarget, commandInfo.keys, commandInfo.updateValue);
+      setValue(newTarget, keys, updateValue);
       //newTarget[targetKey] = command[targetKey]['$set'];
 
     } else {
-      newTarget = commandInfo.updateValue;
+      newTarget = updateValue;
     }
     
-  } else if(commandInfo.method === '$push') {
-    //console.log(commandInfo);
+  } else if(method === '$push') {
     newTarget = target.slice(0);
-    for(let i = 0;i < commandInfo.updateValue.length;i++) {
-      newTarget.push(commandInfo.updateValue[i]);
+    for(let i = 0;i < updateValue.length;i++) {
+      newTarget.push(updateValue[i]);
     }
-  } else if(commandInfo.method === '$unshift') {
-    //console.log(commandInfo);
-    newTarget = target.slice(0);
-    for(let i = 0;i < commandInfo.updateValue.length;i++) {
-      newTarget.unshift(commandInfo.updateValue[i]);
-    }
-  } else if(commandInfo.method === '$merge') {
-    newTarget = copyObject(target, null);
-    console.log(commandInfo);
-  }
 
+  } else if(method === '$unshift') {
+    newTarget = target.slice(0);
+    for(let i = 0;i < updateValue.length;i++) {
+      newTarget.unshift(updateValue[i]);
+    }
+
+  } else if(method === '$merge') {
+    newTarget = copyObject(target, null);
+    let tmpObj = updateValue;
+    for(let key in tmpObj) {
+      newTarget[key] = tmpObj[key];
+    }
+
+  } else if(method === '$apply') {
+    if(Array.isArray(target)) {
+
+    } else if(typeof target === 'object') {
+
+    } else {
+      newTarget = updateValue(target);
+    }
+
+  } else if(method === '$splice') {
+    newTarget = target.slice(0);
+    for(let i = 0;i < updateValue.length;i++) {
+      newTarget.splice.apply(newTarget, updateValue[i]);
+    }
+
+  } else {
+    console.log('method is not exist')
+  }
   
   return newTarget;
 }
@@ -50,7 +69,7 @@ const findMethod = (command) => {
   const func = (target) => {
     const keyOfCommand = Object.keys(target)[0];
     let tmp = command;
-    //console.log(keyOfCommand);
+    
     if(keyOfCommand[0] === '$') {
       result.method = keyOfCommand;
       if(result.keys.length === 0) {
@@ -97,8 +116,6 @@ const setValue = (obj, arr, value) => {
   }
 }
 
-// console.log(findMethod({a:{b:{c:{$set:1}}}}));
-
 const copyObject = (obj, keyOfCommand) => {
   let newObj = {};
   // if(Array.isArray(obj)) {
@@ -121,9 +138,5 @@ const copyObject = (obj, keyOfCommand) => {
   }
   return newObj;
 }
-
-
-//console.log(update({ a: "b" }, { $set: { c: "d" } }));
-console.log(update({ a: "b" }, { $merge: { c: "d" } }));
 
 module.exports = update;
