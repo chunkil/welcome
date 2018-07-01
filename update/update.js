@@ -11,7 +11,7 @@ const update = (target, command) => {
     newTarget[keysOfTarget[i]] = target[keysOfTarget[i]];
   }
   
-  console.log(commandInfo);
+  //console.log(commandInfo);
   setValue(newTarget, commandInfo.keys, commandInfo.updateValue);
   //newTarget[targetKey] = command[targetKey]['$set'];
 
@@ -26,7 +26,7 @@ const findMethod = (command) => {
   const func = (target) => {
     const keyOfCommand = Object.keys(target)[0];
     let tmp = command;
-    console.log(keyOfCommand);
+    //console.log(keyOfCommand);
     if(keyOfCommand[0] === '$') {
       result.method = keyOfCommand;
       result.updateValue = nestedObj(tmp, result.keys);
@@ -63,7 +63,6 @@ const setValue = (obj, arr, value) => {
   let tmp = obj;
   for(let i = 0;i < arr.length;i++) {
     if(i === arr.length - 1) {
-      console.log('@@',tmp);
       tmp[arr[i]] = value;
     } else {
       tmp = tmp[arr[i]];
@@ -71,18 +70,18 @@ const setValue = (obj, arr, value) => {
   }
 }
 
-console.log(findMethod({a:{b:{c:{$set:1}}}}));
+// console.log(findMethod({a:{b:{c:{$set:1}}}}));
 
 
 
-const state = { name: "Alice", todos: [] };
-const nextState = update(state, {
-  name: { $set: "Bob" }
-});
+// const state = { name: "Alice", todos: [] };
+// const nextState = update(state, {
+//   name: { $set: "Bob" }
+// });
 
-console.log('next', nextState);
-console.log('next', state);
-console.log(nextState.name === "Bob"); // true
-console.log(state.todos === nextState.todos); // true
+// console.log('next', nextState);
+// console.log('next', state);
+// console.log(nextState.name === "Bob"); // true
+// console.log(state.todos === nextState.todos); // true
 
 module.exports = update;
