@@ -1,20 +1,44 @@
 const update = (target, command) => {
-  let newTarget = {};
-  const commandInfo = findMethod(command);
-  
-  // const targetKey = Object.keys(command)[0];
-
+  const commandInfo = findMethod(command);  
+  const targetKey = Object.keys(command)[0];
   const keysOfTarget = Object.keys(target);
 
+  let newTarget = null;
 
-  for(let i = 0;i < keysOfTarget.length;i++) {
-    newTarget[keysOfTarget[i]] = target[keysOfTarget[i]];
+  if(commandInfo.method === '$set') {
+    newTarget = {};
+    if(commandInfo.keys.length !== 0) {
+      // for(let i = 0;i < keysOfTarget.length;i++) {
+      //   newTarget[keysOfTarget[i]] = target[keysOfTarget[i]];
+      // }
+      newTarget = copyObject(target, targetKey);
+      
+      //console.log(commandInfo);
+      setValue(newTarget, commandInfo.keys, commandInfo.updateValue);
+      //newTarget[targetKey] = command[targetKey]['$set'];
+
+    } else {
+      newTarget = commandInfo.updateValue;
+    }
+    
+  } else if(commandInfo.method === '$push') {
+    //console.log(commandInfo);
+    newTarget = target.slice(0);
+    for(let i = 0;i < commandInfo.updateValue.length;i++) {
+      newTarget.push(commandInfo.updateValue[i]);
+    }
+  } else if(commandInfo.method === '$unshift') {
+    //console.log(commandInfo);
+    newTarget = target.slice(0);
+    for(let i = 0;i < commandInfo.updateValue.length;i++) {
+      newTarget.unshift(commandInfo.updateValue[i]);
+    }
+  } else if(commandInfo.method === '$merge') {
+    newTarget = copyObject(target, null);
+    console.log(commandInfo);
   }
-  
-  //console.log(commandInfo);
-  setValue(newTarget, commandInfo.keys, commandInfo.updateValue);
-  //newTarget[targetKey] = command[targetKey]['$set'];
 
+  
   return newTarget;
 }
 
@@ -29,8 +53,12 @@ const findMethod = (command) => {
     //console.log(keyOfCommand);
     if(keyOfCommand[0] === '$') {
       result.method = keyOfCommand;
-      result.updateValue = nestedObj(tmp, result.keys);
-      result.updateValue = result.updateValue[result.method];
+      if(result.keys.length === 0) {
+        result.updateValue = command[result.method];
+      } else {
+        const tmpKey = nestedObj(tmp, result.keys);
+        result.updateValue = tmpKey[result.method];
+      }
     } else {
       result.keys.push(keyOfCommand);
       // for(let i = 0;i < result.keys.length;i++) {
@@ -60,28 +88,42 @@ const nestedObj = (obj, arr) => {
 }
 
 const setValue = (obj, arr, value) => {
-  let tmp = obj;
   for(let i = 0;i < arr.length;i++) {
     if(i === arr.length - 1) {
-      tmp[arr[i]] = value;
+      obj[arr[i]] = value;
     } else {
-      tmp = tmp[arr[i]];
+      obj = obj[arr[i]];
     }
   }
 }
 
 // console.log(findMethod({a:{b:{c:{$set:1}}}}));
 
+const copyObject = (obj, keyOfCommand) => {
+  let newObj = {};
+  // if(Array.isArray(obj)) {
+  //   newObj = [];
+  // } else {
+  //   newObj = {};
+  // }
+  
+  for(let key in obj) {
+    if(typeof obj[key] === 'object') {
+      if(keyOfCommand === key) {
+        newObj[key] = copyObject(obj[key]);
+      } else {
+        newObj[key] = obj[key];
+      }
+    } else {
+      newObj[key] = obj[key];
+    }
+    
+  }
+  return newObj;
+}
 
 
-// const state = { name: "Alice", todos: [] };
-// const nextState = update(state, {
-//   name: { $set: "Bob" }
-// });
-
-// console.log('next', nextState);
-// console.log('next', state);
-// console.log(nextState.name === "Bob"); // true
-// console.log(state.todos === nextState.todos); // true
+//console.log(update({ a: "b" }, { $set: { c: "d" } }));
+console.log(update({ a: "b" }, { $merge: { c: "d" } }));
 
 module.exports = update;
